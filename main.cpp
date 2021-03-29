@@ -20,6 +20,11 @@ struct Mem {
         }
     }
 
+    /** Read 1 byte */
+    Byte operator[] (u32 address ) const {
+        // assert here address is < MAX_MEM
+        return data[address];
+    } 
 };
 
 struct CPU {
@@ -46,8 +51,17 @@ struct CPU {
         memory.init();
     }
 
+    Byte fetchByte (u32 cycles, Mem& memory) {
+        Byte data = memory[PC];
+        PC++;
+        cycles--;
+        return data;
+    }
+
     void exec( u32 cycles, Mem& memory ) {
-        
+        while (cycles > 0) {
+            Byte instr = fetchByte(cycles, memory);
+        }
     }
 };
 
