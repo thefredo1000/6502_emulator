@@ -5,6 +5,8 @@
 // http://www.obelisk.me.uk/6502/
 
 
+
+
 struct CPU {
     using Byte = unsigned char;
     using Word = unsigned short;
@@ -22,10 +24,17 @@ struct CPU {
     Byte V : 1; // Status Flag
     Byte N : 1; // Status Flag
 
+    void reset() {
+        PC = 0xFFFC;
+        SP = 0x0100;
+        C = Z = I = D = B = V = N = 0;
+        A = X = Y = 0;
+    }
 };
 
 int main() {
 
     CPU cpu;
+    cpu.reset();
     return 0;
 }
