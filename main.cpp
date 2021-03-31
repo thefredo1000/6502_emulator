@@ -5,11 +5,12 @@
 // http://www.obelisk.me.uk/6502/
 
 
-using Byte = unsigned char;
-using Word = unsigned short;
+using Byte = unsigned char;     //  8 Bit
+using Word = unsigned short;    // 16 Bit
 
-using u32 = unsigned int;
+using u32 = unsigned int;       // 32 Bit
 
+// Memory Structure
 struct Mem {
     static constexpr u32 MAX_MEM = 1024 * 64;
     Byte data[MAX_MEM];
@@ -110,6 +111,8 @@ int main() {
     Mem mem;
     CPU cpu;
     cpu.reset( mem );
+
+    // Hard coded test
     mem[0xFFFC] = CPU::INS_LDA_ZP;
     mem[0xFFFD] = 0x42;
     mem[0x0042] = 0x84;
