@@ -32,6 +32,13 @@ struct Mem {
         // assert here address is < MAX_MEM
         return data[address];
     } 
+
+    /** Write 2 bytes */
+    void writeWord( Word value, u32 addr, u32& cycles) {
+        data[addr]   = value & 0xFF;
+        data[addr+1] = (value >> 8);
+        cycles -= 2;
+    }
 };
 
 struct CPU {
@@ -58,6 +65,20 @@ struct CPU {
         memory.init();
     }
 
+    Byte fetchWord (u32& cycles, Mem& memory) {
+        // 6502 is little endian
+        Word data = memory[PC];
+        PC++;
+
+        data |= memory[PC] << 8;
+        PC++;
+
+        cycles += 2;
+
+
+        return data;
+    }
+
     Byte fetchByte (u32& cycles, Mem& memory) {
         Byte data = memory[PC];
         PC++;
@@ -73,6 +94,9 @@ struct CPU {
     // Opcodes
     static constexpr Byte INS_LDA_IM = 0xA9;
     static constexpr Byte INS_LDA_ZP = 0xA5;
+    static constexpr Byte INS_LDA_ZPX = 0xB5;
+    static constexpr Byte INS_JSR = 0x20;
+    
 
     void LDASetStatus() {
         Z = (A == 0);
@@ -88,18 +112,37 @@ struct CPU {
                     Byte val = fetchByte (cycles, memory);
                     A = val;
                     LDASetStatus();
-                    printf("RAN \n");
+                    printf("Intruction LDA Immediate \n");
+                    printf("A = %x \n", A);
                 } 
                 break;
                 case INS_LDA_ZP :{
-                    Byte zeroPageAddr = fetchByte (cycles, memory);
+                    Byte zeroPageAddr = fetchByte(cycles, memory);
                     A = readByte( cycles, zeroPageAddr, memory);
-
+                    LDASetStatus();
+                    printf("Intruction LDA Zero Page \n");
+                    printf("A = %x \n", A);
+                } break;
+                case INS_LDA_ZPX :{
+                    Byte zeroPageAddr = fetchByte(cycles, memory);
+                    zeroPageAddr += X;
+                    cycles--;
+                    A = readByte( cycles, zeroPageAddr, memory);
+                    LDASetStatus();
+                    printf("Intruction LDA Zero Page X \n");
+                    printf("A = %x \n", A);
                 } 
                 break;
+                case INS_JSR :{
+                    Word subAddr = fetchWord(cycles, memory);
+                    memory.writeWord(PC - 1, SP, cycles);
+                    PC = subAddr;
+                    cycles--;
+                    printf("Intruction Jump to Subroutine \n");
+                } break;
                 default: {
                     cycles--;
-                    printf("Instruction not handled %x \n", instr);
+                    // printf("Instruction not handled %x \n", instr);
                 } break;
             }
         }
@@ -113,9 +156,11 @@ int main() {
     cpu.reset( mem );
 
     // Hard coded test
-    mem[0xFFFC] = CPU::INS_LDA_ZP;
+    mem[0xFFFC] = CPU::INS_JSR;
     mem[0xFFFD] = 0x42;
-    mem[0x0042] = 0x84;
-    cpu.exec( 3, mem );
+    mem[0xFFFE] = 0x42;
+    mem[0x4242] = CPU::INS_LDA_IM;
+    mem[0x4243] = 0x84;
+    cpu.exec( 9, mem );
     return 0;
 }
